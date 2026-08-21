@@ -11,16 +11,68 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout
+
+      # 1. Get your project files
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build APK with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
+      # 2. Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          workdir: .
-          buildozer_version: master
-          command: buildozer android debug
+          python-version: "3.11"
 
+      # 3. Java required by Android/Gradle
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # 4. Android/Buildozer system dependencies
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            python3-pip \
+            autoconf \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo5 \
+            cmake \
+            libffi-dev \
+            libssl-dev \
+            automake \
+            autopoint \
+            gettext
+
+      # 5. Rust
+      - name: Install Rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      # 6. Install Buildozer
+      - name: Install Buildozer
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install "Cython==0.29.34"
+          python -m pip install buildozer
+
+      # 7. Build the Android APK
+      - name: Build APK
+        run: |
+          buildozer android debug
+
+      # 8. Give us the APK as a downloadable artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
