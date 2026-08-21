@@ -6,8 +6,14 @@ title = GRAVIX
 # (str) Package name
 package.name = gravix
 
-# (str) Package domain (needed for android packaging)
+# (str) Package domain
 package.domain = org.gravix
+
+# (str) Source directory
+source.dir = .
+
+# (str) Application version
+version = 1.0
 
 # (list) Source files to include
 source.include_exts = py,png,jpg,jpeg,kv,atlas,json,db
@@ -21,15 +27,26 @@ orientation = portrait
 # (list) Permissions
 android.permissions = INTERNET
 
-source.main = main.py
+# (bool) Fullscreen
 fullscreen = 0
+
+# (int) Android API
 android.api = 35
+
+# (int) Minimum Android API
 android.minapi = 23
+
+# (list) Android architectures
 android.archs = arm64-v8a
+
+# (bool) Accept Android SDK license
 android.accept_sdk_license = True
+
+
 [buildozer]
-# (int) Log level (0 = error only, 1 = info, 2 = debug)
+
+# (int) Log level
 log_level = 2
 
-# (int) Display warning if buildozer is run as root (0 = False, 1 = True)
+# (int) Display warning if buildozer is run as root
 warn_on_root = 0
