@@ -34,7 +34,7 @@ fullscreen = 0
 android.api = 35
 
 # (int) Minimum Android API
-android.minapi = 23
+android.minapi = 26
 
 # (list) Android architectures
 android.archs = arm64-v8a
