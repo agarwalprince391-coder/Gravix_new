@@ -449,7 +449,7 @@ class AddSkillScreen(Screen):
         root.add_widget(label("ADD SKILL", 26, TEXT, True))
         root.add_widget(label("Expand the GRAVIX skill tree.", 12, MUTED))
 
-        self.name = TextInput(hint_text="Skill name", multiline=False, size_hint_y=None, height=dp(52),
+        self.skill_name = TextInput(hint_text="Skill name", multiline=False, size_hint_y=None, height=dp(52),
                               background_normal="", background_color=get_color_from_hex(CARD),
                               foreground_color=get_color_from_hex(TEXT), hint_text_color=get_color_from_hex(MUTED))
         self.diff = TextInput(hint_text="Difficulty: S / A / B / C", multiline=False, size_hint_y=None, height=dp(52),
@@ -459,7 +459,7 @@ class AddSkillScreen(Screen):
                              size_hint_y=None, height=dp(52),
                              background_normal="", background_color=get_color_from_hex(CARD),
                              foreground_color=get_color_from_hex(TEXT), hint_text_color=get_color_from_hex(MUTED))
-        root.add_widget(self.name)
+        root.add_widget(self.skill_name)
         root.add_widget(self.diff)
         root.add_widget(self.req)
 
@@ -471,17 +471,17 @@ class AddSkillScreen(Screen):
         self.add_widget(root)
 
     def save(self, *_):
-        if not self.name.text.strip() or not self.req.text.strip():
+        if not self.skill_name.text.strip() or not self.req.text.strip():
             self.status.text = "Name and required level are required."
             return
         try:
             payload = {
-                "skill_name": self.name.text.strip(),
+                "skill_name": self.skill_name.text.strip(),
                 "difficulty": self.diff.text.strip().upper() or "C",
                 "required_level": int(self.req.text),
             }
             requests.post(db_url("skills"), json=payload, timeout=10)
-            self.name.text = self.diff.text = self.req.text = ""
+            self.skill_name.text = self.diff.text = self.req.text = ""
             self.manager.current = "skills"
         except Exception:
             self.status.text = "Could not save skill."
