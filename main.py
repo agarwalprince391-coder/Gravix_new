@@ -1,3 +1,4 @@
+from kivy.resources import resource_find
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.metrics import dp
@@ -9,6 +10,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
+from kivy.uix.image import Image
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.popup import Popup
 from kivy.graphics import Color, RoundedRectangle, Line
@@ -99,10 +101,20 @@ class LoginScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+        # Set backgrouncd image
+        try:
+
+            bg_path = resource_find('assets.gravix/Baki_bg.png')
+            bg = Image(source=bg_path, allow_stretch=True, keep_ratio=False)
+            bg.size_hint = (1, 1)
+            self.add_widget(bg)
+        except Exception:
+            pass # If imane pot found continue without backaround
+
         root = BoxLayout(orientation="vertical", padding=[dp(28), dp(50), dp(28), dp(28)])
         root.spacing = dp(16)
 
-        spacer = BoxLayout(size_hint_y=0.55)
+        spacer = BoxLayout(size_hint_y=0.25)
         root.add_widget(spacer)
 
         logo = label("GRAVIX", 38, ACCENT, True, "center")
