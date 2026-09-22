@@ -178,13 +178,17 @@ class LoginScreen(Screen):
             self.status.text = "Username and password cannot be empty."
             return
         try:
-            if requests.get(db_url(f"users/{u}"), timeout=10).json() is not None:
+            existing_response = requests.get(db_url(f"users/{u}"), timeout=10)
+            if existing_response.status_code == 200 and existing_response.json():
                 self.status.text = "Username already exists."
                 return
             user = {"username": u, "password": p, "level": 0, "xp": 0}
-            requests.put(db_url(f"users/{u}"), json=user, timeout=10)
-            App.get_running_app().current_user = u
-            self.manager.current = "home"
+            response = requests.put(db_url(f"users/{u}"), json=user, timeout=10)
+            if response.status_code in (200, 201):
+                App.get_running_app().current_user = u
+                self.manager.current = "home"
+            else: 
+                self.status.text = "Could not create account."
         except Exception:
             self.status.text = "Registration failed."
 
