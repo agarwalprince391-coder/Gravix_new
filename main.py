@@ -200,7 +200,8 @@ class LoginScreen(Screen):
                 App.get_running_app().current_user = u
                 self.manager.current = "home"
             else: 
-                self.status.text = "Could not create account."
+                self.status.text =f"Firebase error:
+{response.status_code} {response.text}"
         except Exception:
             self.status.text = "Registration failed."
 
