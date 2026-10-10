@@ -5,7 +5,7 @@ package.domain = com.gravix
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,ttf,json
 version = 1.0.0
-requirements = python3,kivy==2.3.1,requests,plyer
+requirements = python3,kivy==2.3.1,requests,plyer,charset_normalizer==3.3.2
 orientation = portrait
 fullscreen = 0
 android.api = 36
