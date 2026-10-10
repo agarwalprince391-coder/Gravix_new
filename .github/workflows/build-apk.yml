@@ -3,15 +3,21 @@ name: Build GRAVIX Android APK
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gravix-android-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
     steps:
-      - name: Checkout repository
+      - name: Check out source
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -19,56 +25,53 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Install system dependencies
+      - name: Install Android build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git \
-            zip \
-            unzip \
-            openjdk-17-jdk \
-            python3-pip \
-            autoconf \
-            libtool \
-            pkg-config \
-            zlib1g-dev \
-            libncurses5-dev \
-            libncursesw5-dev \
-            cmake \
-            libffi-dev \
-            libssl-dev \
-            automake \
-            autopoint \
-            gettext
-
-      - name: Install Rust
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+            build-essential git zip unzip openjdk-17-jdk \
+            autoconf automake libtool pkg-config cmake \
+            zlib1g-dev libncurses-dev libtinfo6 libffi-dev libssl-dev
 
       - name: Install Buildozer
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install "Cython==0.29.34" buildozer
+          python -m pip install --upgrade pip wheel setuptools
+          python -m pip install "Cython==0.29.36" buildozer
 
-      - name: Check project files
+      - name: Create Firebase client configuration
+        env:
+          GRAVIX_FIREBASE_API_KEY: ${{ secrets.GRAVIX_FIREBASE_API_KEY }}
+          GRAVIX_FUNCTIONS_URL: ${{ vars.GRAVIX_FUNCTIONS_URL }}
         run: |
-          pwd
-          ls -la
-          find . -name "buildozer.spec" -print
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          key = os.environ.get("GRAVIX_FIREBASE_API_KEY", "")
+          if not key:
+              raise SystemExit("Add the GRAVIX_FIREBASE_API_KEY repository secret before building.")
+          functions_url = os.environ.get("GRAVIX_FUNCTIONS_URL") or (
+              "https://asia-southeast1-gravix-7b589.cloudfunctions.net"
+          )
+          Path("gravix_config.py").write_text(
+              "FIREBASE_API_KEY = " + repr(key) + "\n" +
+              "FIREBASE_FUNCTIONS_BASE_URL = " + repr(functions_url) + "\n",
+              encoding="utf-8",
+          )
+          PY
 
-      - name: Build APK
-        run: buildozer android debug
+      - name: Build debug APK
+        run: buildozer -v android debug
 
-      - name: Upload APK
+      - name: Save APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GRAVIX-APK
+          name: gravix-debug-apk
           path: bin/*.apk
           if-no-files-found: error
+          retention-days: 14
