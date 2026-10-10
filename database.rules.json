@@ -1,0 +1,141 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false,
+        "profile": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.hasChildren(['display_name']) && newData.child('display_name').isString() && newData.child('display_name').val().length <= 50"
+        },
+        "preferences": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "stats": {
+          ".write": false
+        },
+        "activity": {
+          ".write": false
+        },
+        "achievements": {
+          ".write": false
+        },
+        "skill_progress": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "skill_logs": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "program_sessions": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "missions": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "glowup": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "video_submissions": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "academy_requests": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "store_clicks": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "guardrails": {
+          ".write": false
+        }
+      }
+    },
+    "public_profiles": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.child('display_name').isString() && newData.child('display_name').val().length <= 50 && newData.child('avatar_url').isString() && newData.child('avatar_url').val().length <= 600 && newData.child('goal').isString() && newData.child('goal').val().length <= 100"
+      }
+    },
+    "leaderboard": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "skills": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "academy_directory": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "marketplace": {
+      ".write": false,
+      "programs": {
+        ".read": "auth != null",
+        "$listingId": {
+          ".write": "auth != null && newData.child('creator_uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['title', 'creator_uid', 'description', 'duration', 'price', 'url']) && newData.child('title').isString() && newData.child('title').val().length <= 120 && newData.child('description').isString() && newData.child('description').val().length <= 2000 && newData.child('price').isString() && newData.child('price').val().length <= 50 && newData.child('url').isString() && newData.child('url').val().length <= 1000"
+        }
+      },
+      "sessions": {
+        ".read": "auth != null",
+        "$listingId": {
+          ".write": "auth != null && newData.child('creator_uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['title', 'creator_uid', 'description', 'duration', 'price', 'url']) && newData.child('title').isString() && newData.child('title').val().length <= 120 && newData.child('description').isString() && newData.child('description').val().length <= 2000 && newData.child('price').isString() && newData.child('price').val().length <= 50 && newData.child('url').isString() && newData.child('url').val().length <= 1000"
+        }
+      },
+      "live": {
+        ".read": "auth != null",
+        "$listingId": {
+          ".write": "auth != null && newData.child('creator_uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['title', 'creator_uid', 'description', 'duration', 'price', 'url']) && newData.child('title').isString() && newData.child('title').val().length <= 120 && newData.child('description').isString() && newData.child('description').val().length <= 2000 && newData.child('price').isString() && newData.child('price').val().length <= 50 && newData.child('url').isString() && newData.child('url').val().length <= 1000"
+        }
+      },
+      "videos": {
+        ".read": "auth != null",
+        "$listingId": {
+          ".write": "auth != null && newData.child('creator_uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['title', 'creator_uid', 'description', 'duration', 'price', 'url']) && newData.child('title').isString() && newData.child('title').val().length <= 120 && newData.child('description').isString() && newData.child('description').val().length <= 2000 && newData.child('price').isString() && newData.child('price').val().length <= 50 && newData.child('url').isString() && newData.child('url').val().length <= 1000"
+        }
+      },
+      "requests": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      },
+      "transactions": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": false
+        }
+      }
+    },
+    "live_comments": {
+      ".read": "auth != null",
+      "$listingId": {
+        "$commentId": {
+          ".write": "auth != null && newData.child('uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['comment', 'display_name', 'uid']) && newData.child('comment').isString() && newData.child('comment').val().length <= 1000"
+        }
+      }
+    },
+    "store": {
+      ".read": "auth != null",
+      "items": {
+        "$itemId": {
+          ".write": "auth != null && newData.child('seller_uid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['name', 'description', 'price', 'url', 'seller_uid']) && newData.child('name').isString() && newData.child('name').val().length <= 120 && newData.child('description').isString() && newData.child('description').val().length <= 2000 && newData.child('url').isString() && newData.child('url').val().length <= 1000"
+        }
+      }
+    },
+    "match_submissions": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}
