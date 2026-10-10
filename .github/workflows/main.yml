@@ -36,7 +36,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             build-essential git zip unzip openjdk-17-jdk \
-            autoconf automake libtool pkg-config cmake \
+            autoconf automake libtool libtool-bin libltdl-dev \
+            pkg-config cmake m4 \
             zlib1g-dev libncurses-dev libtinfo6 libffi-dev libssl-dev
 
       - name: Install Buildozer
@@ -64,6 +65,9 @@ jobs:
               encoding="utf-8",
           )
           PY
+
+      - name: Clean stale Buildozer state
+        run: rm -rf .buildozer
 
       - name: Build debug APK
         run: buildozer -v android debug
