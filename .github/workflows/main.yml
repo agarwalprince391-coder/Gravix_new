@@ -20,9 +20,6 @@ jobs:
     env:
       GRAVIX_FIREBASE_API_KEY: ${{ secrets.GRAVIX_FIREBASE_API_KEY }}
       GRAVIX_FUNCTIONS_URL: ${{ vars.GRAVIX_FUNCTIONS_URL }}
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
 
     steps:
       - name: Check out source
@@ -45,39 +42,15 @@ jobs:
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             build-essential git zip unzip curl ca-certificates \
-            pkg-config cmake ninja-build openjdk-17-jdk \
-            autoconf automake libtool libltdl-dev \
-            libffi-dev libssl-dev zlib1g-dev libncurses-dev \
-            python3-distutils
-
-      - name: Install Android SDK command-line tools
-        shell: bash
-        run: |
-          mkdir -p "$ANDROID_HOME"
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
-
-          curl -L https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/cmdline-tools.zip
-          unzip -o /tmp/cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
-
-          if [ -d "$ANDROID_HOME/cmdline-tools/cmdline-tools" ]; then
-            mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
-          fi
-
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
-
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
-            "platform-tools" \
-            "platforms;android-34" \
-            "build-tools;34.0.0" \
-            "ndk;28.2.13676358" \
-            "cmdline-tools;latest"
+            pkg-config cmake ninja-build autoconf automake \
+            libtool libltdl-dev libffi-dev libssl-dev zlib1g-dev \
+            libncurses-dev python3-setuptools
 
       - name: Install Buildozer
         shell: bash
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install "Cython==0.29.36" "buildozer==1.5.0"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Create Firebase client configuration
         shell: bash
@@ -87,14 +60,15 @@ jobs:
             exit 1
           fi
 
-          FUNCTIONS_URL="${GRAVIX_FUNCTIONS_URL:-https://asia-southeast1-gravix-7b589.cloudfunctions.net}"
-
           python - <<'PY'
           import os
           from pathlib import Path
 
           api_key = os.environ["GRAVIX_FIREBASE_API_KEY"]
-          functions_url = os.environ.get("GRAVIX_FUNCTIONS_URL") or "https://asia-southeast1-gravix-7b589.cloudfunctions.net"
+          functions_url = (
+              os.environ.get("GRAVIX_FUNCTIONS_URL")
+              or "https://asia-southeast1-gravix-7b589.cloudfunctions.net"
+          )
 
           Path("gravix_config.py").write_text(
               "FIREBASE_API_KEY = " + repr(api_key) + "\n"
@@ -103,26 +77,13 @@ jobs:
           )
           PY
 
-      - name: Install OS build dependencies
-        shell: bash
-        run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            build-essential git zip unzip curl ca-certificates \
-            pkg-config cmake ninja-build openjdk-17-jdk \
-            autoconf automake libtool libltdl-dev \
-            libffi-dev libssl-dev zlib1g-dev libncurses-dev \
-            python3-setuptools
-
       - name: Clean stale Buildozer state
         shell: bash
         run: rm -rf .buildozer bin
 
       - name: Build debug APK
         shell: bash
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          buildozer -v android debug
+        run: buildozer -v android debug
 
       - name: Save APK artifact
         if: success()
