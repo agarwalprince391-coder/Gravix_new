@@ -15,15 +15,18 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 120
+
+    env:
+      GRAVIX_FIREBASE_API_KEY: ${{ secrets.GRAVIX_FIREBASE_API_KEY }}
+      GRAVIX_FUNCTIONS_URL: ${{ vars.GRAVIX_FUNCTIONS_URL }}
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      JAVA_HOME: /usr/lib/jvm/temurin-17-jdk-amd64
+
     steps:
       - name: Check out source
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -31,48 +34,87 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Install Android build dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install OS build dependencies
+        shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential git zip unzip openjdk-17-jdk \
-            autoconf automake libtool libtool-bin libltdl-dev \
-            pkg-config cmake m4 \
-            zlib1g-dev libncurses-dev libtinfo6 libffi-dev libssl-dev
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            build-essential git zip unzip curl ca-certificates \
+            pkg-config cmake ninja-build openjdk-17-jdk \
+            autoconf automake libtool libltdl-dev \
+            libffi-dev libssl-dev zlib1g-dev libncurses-dev \
+            python3-distutils
+
+      - name: Install Android SDK command-line tools
+        shell: bash
+        run: |
+          mkdir -p "$ANDROID_HOME"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+
+          curl -L https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o /tmp/cmdline-tools.zip
+          unzip -o /tmp/cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
+
+          if [ -d "$ANDROID_HOME/cmdline-tools/cmdline-tools" ]; then
+            mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
+
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "ndk;28.2.13676358" \
+            "cmdline-tools;latest"
 
       - name: Install Buildozer
+        shell: bash
         run: |
-          python -m pip install --upgrade pip wheel setuptools
+          python -m pip install --upgrade pip setuptools wheel
           python -m pip install "Cython==0.29.36" "buildozer==1.5.0"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Create Firebase client configuration
-        env:
-          GRAVIX_FIREBASE_API_KEY: ${{ secrets.GRAVIX_FIREBASE_API_KEY }}
-          GRAVIX_FUNCTIONS_URL: ${{ vars.GRAVIX_FUNCTIONS_URL }}
+        shell: bash
         run: |
+          if [ -z "${GRAVIX_FIREBASE_API_KEY}" ]; then
+            echo "Missing required secret: GRAVIX_FIREBASE_API_KEY"
+            exit 1
+          fi
+
+          FUNCTIONS_URL="${GRAVIX_FUNCTIONS_URL:-https://asia-southeast1-gravix-7b589.cloudfunctions.net}"
+
           python - <<'PY'
           import os
           from pathlib import Path
-          key = os.environ.get("GRAVIX_FIREBASE_API_KEY", "")
-          if not key:
-              raise SystemExit("Add the GRAVIX_FIREBASE_API_KEY repository secret before building.")
-          functions_url = os.environ.get("GRAVIX_FUNCTIONS_URL") or (
-              "https://asia-southeast1-gravix-7b589.cloudfunctions.net"
-          )
+
+          api_key = os.environ["GRAVIX_FIREBASE_API_KEY"]
+          functions_url = os.environ.get("GRAVIX_FUNCTIONS_URL") or "https://asia-southeast1-gravix-7b589.cloudfunctions.net"
+
           Path("gravix_config.py").write_text(
-              "FIREBASE_API_KEY = " + repr(key) + "\n" +
-              "FIREBASE_FUNCTIONS_BASE_URL = " + repr(functions_url) + "\n",
+              "FIREBASE_API_KEY = " + repr(api_key) + "\n"
+              + "FIREBASE_FUNCTIONS_BASE_URL = " + repr(functions_url) + "\n",
               encoding="utf-8",
           )
           PY
 
       - name: Clean stale Buildozer state
-        run: rm -rf .buildozer
+        shell: bash
+        run: rm -rf .buildozer bin
 
       - name: Build debug APK
-        run: buildozer -v android debug
+        shell: bash
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          buildozer -v android debug
 
       - name: Save APK artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: gravix-debug-apk
