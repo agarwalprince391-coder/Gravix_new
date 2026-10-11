@@ -103,6 +103,17 @@ jobs:
           )
           PY
 
+      - name: Install OS build dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            build-essential git zip unzip curl ca-certificates \
+            pkg-config cmake ninja-build openjdk-17-jdk \
+            autoconf automake libtool libltdl-dev \
+            libffi-dev libssl-dev zlib1g-dev libncurses-dev \
+            python3-setuptools
+
       - name: Clean stale Buildozer state
         shell: bash
         run: rm -rf .buildozer bin
