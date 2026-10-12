@@ -15,7 +15,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     env:
       GRAVIX_FIREBASE_API_KEY: ${{ secrets.GRAVIX_FIREBASE_API_KEY }}
@@ -77,13 +77,37 @@ jobs:
           )
           PY
 
-      - name: Clean stale Buildozer state
+      - name: Cache Buildozer state
+        uses: actions/cache@v4
+        with:
+          path: |
+            .buildozer
+            ~/.buildozer
+          key: ${{ runner.os }}-buildozer-1.5.0-py311-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-1.5.0-py311-
+
+      - name: Clean stale APK output
         shell: bash
-        run: rm -rf .buildozer bin
+        run: rm -rf bin
 
       - name: Build debug APK
         shell: bash
-        run: buildozer -v android debug
+        run: |
+          for attempt in 1 2 3; do
+            echo "Build attempt ${attempt} of 3"
+            if buildozer -v android debug; then
+              echo "Build succeeded"
+              exit 0
+            fi
+            if [ "${attempt}" -lt 3 ]; then
+              delay=$((15 * (2 ** (attempt - 1))))
+              echo "Build failed; retrying in ${delay} seconds..."
+              sleep "${delay}"
+            fi
+          done
+          echo "All build attempts failed"
+          exit 1
 
       - name: Save APK artifact
         if: success()
